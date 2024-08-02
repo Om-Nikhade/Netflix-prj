@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+
+    environment {
+        EC2_IP = '52.91.201.76'
+        TOMCAT_USER = 'admin'
+        TOMCAT_PASS = 'admin'
+        WAR_FILE = 'NETFLIX-1.2.2.war'
+        APP_PATH = '/yourapp'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Om-devops/Netflix-prj.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                script {
+                    def tomcatUrl = "http://${env.EC2_IP}:9090/manager/text/deploy?path=${env.APP_PATH}&update=true"
+                    sh """
+                    curl --upload-file target/${env.WAR_FILE} \
+                         --user ${env.TOMCAT_USER}:${env.TOMCAT_PASS} \
+                         ${tomcatUrl}
+                    """
+                }
+            }
+        }
+    }
+}
